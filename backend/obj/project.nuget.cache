@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "AYoEtsUiC64=",
+  "success": true,
+  "projectFilePath": "/Users/garcondeua/Desktop/dev/SampleStartUp/backend/SampleStartUp.csproj",
+  "expectedPackageFiles": [
+    "/Users/garcondeua/.nuget/packages/microsoft.aspnetcore.openapi/9.0.6/microsoft.aspnetcore.openapi.9.0.6.nupkg.sha512",
+    "/Users/garcondeua/.nuget/packages/microsoft.openapi/1.6.17/microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}
