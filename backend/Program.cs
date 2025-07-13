@@ -1,7 +1,14 @@
+using backend.Data;
+using backend.Models;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
@@ -22,7 +29,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
     logger.LogInformation("=== Registered Endpoints ===");
-    
+
     // This will help us see what routes are actually registered
     foreach (var endpoint in app.Services.GetRequiredService<EndpointDataSource>().Endpoints)
     {
@@ -31,31 +38,22 @@ app.Lifetime.ApplicationStarted.Register(() =>
 });
 
 
-
-
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+
+
+// Seeding data
+using (var scope = app.Services.CreateScope())
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate(); // Apply migrations automatically
+
+    if (!db.Users.Any())
+    {
+        db.Users.AddRange(
+            new User { Name = "Albs" },
+            new User { Name = "Bobs" }
+        );
+        db.SaveChanges();
+    }
 }
