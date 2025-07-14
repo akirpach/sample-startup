@@ -4,12 +4,25 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
+// Add services to the container
 builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+
+// Add CORS for frontend
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:5001", "http://localhost")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -18,24 +31,19 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseCors();                  // Enable CORS
 app.UseHttpsRedirection();
-
+app.UseAuthorization();
 // Add this logging to see what endpoints are mapped
 app.MapControllers();
 
-
-// Log all registered endpoints
-app.Lifetime.ApplicationStarted.Register(() =>
+// Auto-migrate database on startup (development only)
+if (app.Environment.IsDevelopment())
 {
-    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogInformation("=== Registered Endpoints ===");
-
-    // This will help us see what routes are actually registered
-    foreach (var endpoint in app.Services.GetRequiredService<EndpointDataSource>().Endpoints)
-    {
-        logger.LogInformation($"Endpoint: {endpoint.DisplayName}");
-    }
-});
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    context.Database.Migrate();
+}
 
 
 app.Run();
